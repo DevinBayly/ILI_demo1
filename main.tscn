@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://couts5b510rvm"]
+
+[ext_resource type="Script" uid="uid://bheo8ttq7gimt" path="res://main.gd" id="1_7mycd"]
+[ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://addons/fpc/character.tscn" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://64ihr8ynap0" path="res://chest_and_platform.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://b5xp653s07m6e" path="res://placement_object.tscn" id="5_lquwl"]
+[ext_resource type="PackedScene" uid="uid://dmy4talu54vs6" path="res://reveal_clue.tscn" id="6_272bh"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_0xm2m"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_h2yge"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_h2yge"]
+
+[sub_resource type="Sky" id="Sky_1bvp3"]
+sky_material = SubResource("ProceduralSkyMaterial_h2yge")
+
+[sub_resource type="Environment" id="Environment_lquwl"]
+background_mode = 2
+sky = SubResource("Sky_1bvp3")
+
+[node name="main" type="Node3D" unique_id=752990665]
+script = ExtResource("1_7mycd")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=7002122]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=711493418]
+shape = SubResource("WorldBoundaryShape3D_0xm2m")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1065731289]
+transform = Transform3D(14.533469, 0, 0, 0, 14.533469, 0, 0, 0, 14.533469, 0, 0, 0)
+mesh = SubResource("PlaneMesh_h2yge")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=834582893]
+environment = SubResource("Environment_lquwl")
+
+[node name="Node3D" parent="." unique_id=346451625 instance=ExtResource("4_1bvp3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5273004, 2.3841858e-07, -5.3038073)
+
+[node name="clue_display" parent="." unique_id=1152669297 instance=ExtResource("6_272bh")]
+
+[node name="Character" parent="." unique_id=1340052247 instance=ExtResource("1_ig7tw")]
+transform = Transform3D(0.9973247, 0, 0.073098846, 0, 1, 0, -0.073098846, 0, 0.9973247, 0, 0, 0)
+
+[node name="Node3D2" parent="." unique_id=1512658388 instance=ExtResource("4_1bvp3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12762833, 0, -5.3515887)
+clue = "This box is the wrong one"
+
+[node name="Node3D3" parent="." unique_id=328355635 instance=ExtResource("4_1bvp3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7941623, 0, -5.6239924)
+clue = "This box is blue"
+
+[node name="placement_object" parent="." unique_id=2026901780 instance=ExtResource("5_lquwl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.7738836, -2.2765512)
+
+[connection signal="show_clue" from="Node3D" to="." method="_on_node_3d_show_clue"]
+[connection signal="show_clue" from="Node3D2" to="." method="_on_node_3d_show_clue"]
+[connection signal="show_clue" from="Node3D3" to="." method="_on_node_3d_show_clue"]
+[connection signal="ball_selected" from="placement_object" to="." method="_on_placement_object_ball_selected"]

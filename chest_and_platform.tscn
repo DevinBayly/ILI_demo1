@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://64ihr8ynap0"]
+
+[ext_resource type="PackedScene" uid="uid://h8o6oh7vaoy" path="res://assets/column-triangle.glb" id="1_flyxw"]
+[ext_resource type="Script" uid="uid://dt58a5ntpw60v" path="res://chest_and_platform.gd" id="1_v43ya"]
+[ext_resource type="ArrayMesh" uid="uid://s33h4hc6t21h" path="res://assets/chest.obj" id="2_v43ya"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_flyxw"]
+size = Vector3(1, 0.960083, 1)
+
+[node name="Node3D" type="Node3D" unique_id=346451625]
+script = ExtResource("1_v43ya")
+clue = "This box is the right one"
+
+[node name="column-triangle4" parent="." unique_id=715228206 instance=ExtResource("1_flyxw")]
+transform = Transform3D(3.103317, 0, 3.5210133, 0, 1.4231914, 0, -3.5210133, 0, 3.103317, 0, 0, 0)
+
+[node name="Chest" type="MeshInstance3D" parent="." unique_id=636991135]
+transform = Transform3D(0.28510603, 0, 0, 0, 0.28510603, 0, 0, 0, 0.28510603, -0.020930236, 1.4280943, -0.22664633)
+mesh = ExtResource("2_v43ya")
+
+[node name="Area3D" type="Area3D" parent="." unique_id=470043682]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1516723710]
+transform = Transform3D(0.4123841, 0, 0, 0, 0.4123841, 0, 0, 0, 0.4123841, -0.019364282, 1.6009967, -0.23936993)
+shape = SubResource("BoxShape3D_flyxw")
+
+[connection signal="mouse_entered" from="Area3D" to="." method="_on_area_3d_mouse_entered"]

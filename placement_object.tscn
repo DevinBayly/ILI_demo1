@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://b5xp653s07m6e"]
+
+[ext_resource type="Script" uid="uid://wevacvingjuj" path="res://placement_object.gd" id="1_anmsq"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_qq5ow"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_anmsq"]
+radius = 0.10218829
+
+[node name="placement_object" type="Node3D" unique_id=2026901780]
+script = ExtResource("1_anmsq")
+
+[node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=847106366]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RigidBody3D" unique_id=819943041]
+transform = Transform3D(0.19588983, 0, 0, 0, 0.19588983, 0, 0, 0, 0.19588983, 0, 0, 0)
+mesh = SubResource("SphereMesh_qq5ow")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="RigidBody3D" unique_id=219951822]
+shape = SubResource("SphereShape3D_anmsq")
+
+[node name="Area3D" type="Area3D" parent="RigidBody3D" unique_id=1393376467]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D/Area3D" unique_id=178437147]
+shape = SubResource("SphereShape3D_anmsq")
+
+[connection signal="mouse_entered" from="RigidBody3D/Area3D" to="." method="_on_area_3d_mouse_entered"]
+[connection signal="mouse_exited" from="RigidBody3D/Area3D" to="." method="_on_area_3d_mouse_exited"]
