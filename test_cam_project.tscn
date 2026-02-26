@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://b3mhf0dssr607"]
+
+[ext_resource type="Script" uid="uid://cqxe2afr4odx8" path="res://test_cam_project.gd" id="1_cdn66"]
+[ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://addons/fpc/character.tscn" id="2_cb6bg"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_n274l"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_cdn66"]
+
+[sub_resource type="Sky" id="Sky_cb6bg"]
+sky_material = SubResource("ProceduralSkyMaterial_cdn66")
+
+[sub_resource type="Environment" id="Environment_n274l"]
+background_mode = 2
+sky = SubResource("Sky_cb6bg")
+
+[node name="test_cam_project" type="Node3D" unique_id=2081829110]
+script = ExtResource("1_cdn66")
+
+[node name="Character" parent="." unique_id=922292337 instance=ExtResource("2_cb6bg")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1923937594]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=312135311]
+shape = SubResource("WorldBoundaryShape3D_n274l")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=549270542]
+environment = SubResource("Environment_n274l")
