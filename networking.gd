@@ -2,7 +2,8 @@ extends Node
 signal received_user_id
 # By default, these expressions are interchangeable.
 var PORT = 8081
-var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
+#var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
+var IP_ADDRESS ="149.165.150.98"
 #var IP_ADDRESS="localhost"
 #var IP_ADDRESS = "192.168.0.151"
 var MAX_CLIENTS = 2
@@ -18,15 +19,15 @@ func _ready() -> void:
 			peer.create_server(PORT, MAX_CLIENTS)
 			multiplayer.multiplayer_peer = peer
 			multiplayer.peer_connected.connect(server_handle_peer_connect)
-		
-	else:
-		print("I am a client")
-		var peer = ENetMultiplayerPeer.new()
-		peer.create_client(IP_ADDRESS, PORT)
-		multiplayer.multiplayer_peer = peer
-		multiplayer.connected_to_server.connect(client_connected_to_server)
-		multiplayer.connection_failed.connect(con_failed)
-		multiplayer.server_disconnected.connect(server_lost)
+			return		
+
+	print("I am a client")
+	var peer = ENetMultiplayerPeer.new()
+	peer.create_client(IP_ADDRESS, PORT)
+	multiplayer.multiplayer_peer = peer
+	multiplayer.connected_to_server.connect(client_connected_to_server)
+	multiplayer.connection_failed.connect(con_failed)
+	multiplayer.server_disconnected.connect(server_lost)
 func server_lost():
 	print("server lost")
 func con_failed():
