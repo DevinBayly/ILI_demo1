@@ -3,19 +3,21 @@ signal received_user_id
 # By default, these expressions are interchangeable.
 var PORT = 8081
 #var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
-var IP_ADDRESS="localhost"
+#var IP_ADDRESS="localhost"
+var IP_ADDRESS = "192.168.0.151"
 var MAX_CLIENTS = 2
 var peer
 func _ready() -> void:
-	var arg = OS.get_cmdline_user_args()[0] # try to see if we started up with the word "server"
-	print(OS.get_cmdline_user_args())
-	if arg == "server":
-		print("I am a server")
-		# Create server.
-		peer = ENetMultiplayerPeer.new()
-		peer.create_server(PORT, MAX_CLIENTS)
-		multiplayer.multiplayer_peer = peer
-		multiplayer.peer_connected.connect(server_handle_peer_connect)
+	if OS.has_feature("linux"):
+		var arg = OS.get_cmdline_user_args()[0] # try to see if we started up with the word "server"
+		print(OS.get_cmdline_user_args())
+		if arg == "server":
+			print("I am a server")
+			# Create server.
+			peer = ENetMultiplayerPeer.new()
+			peer.create_server(PORT, MAX_CLIENTS)
+			multiplayer.multiplayer_peer = peer
+			multiplayer.peer_connected.connect(server_handle_peer_connect)
 		
 	else:
 		print("I am a client")

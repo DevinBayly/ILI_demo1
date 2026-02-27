@@ -142,12 +142,12 @@ func initialize_platform_sdk():
 		return
 
 	platform_sdk_initialized = true
-	initialization_label.text += "SUCCESS"
+	#initialization_label.text += "SUCCESS"
 
 	MetaPlatformSDK.notification_received.connect(on_notification_received)
 
-	update_user_info()
-	update_friend_info()
+	#update_user_info()
+	#update_friend_info()
 	
 
 func on_notification_received(message: MetaPlatformSDK_Message):
@@ -182,12 +182,15 @@ func update_user_info():
 
 	result = await MetaPlatformSDK.entitlement_get_is_viewer_entitled_async().completed
 	if result.is_success():
-		entitled_label.text += "TRUE"
+		print("viewer entitled")
+		#entitled_label.text += "TRUE"
 	else:
-		entitled_label.text += "FALSE"
+		print("viewer isn't entitled")
+		#entitled_label.text += "FALSE"
 
 	result = await MetaPlatformSDK.user_get_logged_in_user_async().completed
 	if result.is_error():
+		print("error failed to get user data")
 		oculus_id_label.text = "Failed to get user data!"
 		push_error("Failed to get user data: ", result.error)
 		return

@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://64ihr8ynap0" path="res://chest_and_platform.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://718m862xeghh" path="res://ui.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://b1g5c1r572k07" path="res://anchor_node.tscn" id="4_lquwl"]
+[ext_resource type="PackedScene" uid="uid://cg11kqsbp2v0n" path="res://networking.tscn" id="7_272bh"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_75bh1"]
 top_radius = 0.005
@@ -27,8 +28,6 @@ sky_material = SubResource("ProceduralSkyMaterial_h1cjv")
 [sub_resource type="Environment" id="Environment_jc7i8"]
 sky = SubResource("Sky_a1pyg")
 tonemap_mode = 2
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_1bvp3"]
 
 [node name="scene_root" type="Node3D" unique_id=1613035025]
 script = ExtResource("1_7mycd")
@@ -89,11 +88,6 @@ scene = ExtResource("4_lquwl")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Main" unique_id=700232707]
 environment = SubResource("Environment_jc7i8")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1505958783]
-transform = Transform3D(6.447613, 0, 0, 0, 6.447613, 0, 0, 0, 6.447613, 0, 0, 0)
-mesh = SubResource("PlaneMesh_1bvp3")
-skeleton = NodePath("../Main")
-
 [node name="Node3D" parent="." unique_id=346451625 instance=ExtResource("3_h2yge")]
 transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.79624486, -0.031452656, 4.7683716e-07, -3.0778522)
 
@@ -102,6 +96,8 @@ transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.7962
 
 [node name="Node3D3" parent="." unique_id=1421380320 instance=ExtResource("3_h2yge")]
 transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.79624486, 2.3787699, 4.7683716e-07, -3.0778522)
+
+[node name="networking" parent="." unique_id=261585203 instance=ExtResource("7_272bh")]
 
 [connection signal="collider_clicked" from="Main" to="." method="_on_main_collider_clicked"]
 [connection signal="button_pressed" from="Main/LeftController" to="Main" method="_on_left_controller_button_pressed"]
