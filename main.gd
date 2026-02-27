@@ -1,5 +1,6 @@
 extends XROrigin3D
 
+signal meta_retrieved_user_id
 
 var passthrough_enabled: bool = false
 
@@ -99,13 +100,13 @@ func _on_openxr_session_begun():
 	load_spatial_anchors_from_file()
 	enable_passthrough(true)
 
-	var environment_depth = Engine.get_singleton("OpenXRMetaEnvironmentDepthExtensionWrapper")
-	if environment_depth:
-		print("Supports environment depth: ", environment_depth.is_environment_depth_supported())
-		print("Supports hand removal: ", environment_depth.is_hand_removal_supported())
-		if environment_depth.is_environment_depth_supported():
-			environment_depth.start_environment_depth()
-			print("Environment depth started: ", environment_depth.is_environment_depth_started())
+	#var environment_depth = Engine.get_singleton("OpenXRMetaEnvironmentDepthExtensionWrapper")
+	#if environment_depth:
+		#print("Supports environment depth: ", environment_depth.is_environment_depth_supported())
+		#print("Supports hand removal: ", environment_depth.is_hand_removal_supported())
+		#if environment_depth.is_environment_depth_supported():
+			#environment_depth.start_environment_depth()
+			#print("Environment depth started: ", environment_depth.is_environment_depth_started())
 
 func enable_passthrough(enable: bool) -> void:
 	if passthrough_enabled == enable:
@@ -146,7 +147,7 @@ func initialize_platform_sdk():
 
 	MetaPlatformSDK.notification_received.connect(on_notification_received)
 
-	#update_user_info()
+	update_user_info()
 	#update_friend_info()
 	
 
@@ -165,8 +166,10 @@ func load_spatial_anchors_from_file():
 	pass
 
 
-
+var entities =[]
 func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity, is_new: bool) -> void:
+	entities.push(_spatial_entity)
+	print("entity is tracked")
 	if is_new:
 		save_spatial_anchors_to_file()
 
@@ -197,7 +200,7 @@ func update_user_info():
 
 	var user: MetaPlatformSDK_User = result.get_user()
 	oculus_id_label.text += user.oculus_id
-
+	meta_retrieved_user_id.emit(user.oculus_id)
 	if user.image_url != "":
 		var image_request = HTTPRequest.new()
 		add_child(image_request)
@@ -206,6 +209,7 @@ func update_user_info():
 		var error = image_request.request(user.image_url)
 		if error != OK:
 			push_error("There was an error with the image request.")
+	
 
 
 func update_friend_info():
@@ -258,11 +262,15 @@ func _on_left_controller_button_pressed(name: String) -> void:
 
 func _on_right_controller_button_pressed(name: String) -> void:
 	if name == "trigger_click" and right_controller_ray_cast.is_colliding():
+		
 		var collider = right_controller_ray_cast.get_collider()
+		print("trigger clicked on object",collider)
 		var position_collide = right_controller_ray_cast.target_position
+		print("position of collision is",position_collide)
 		collider_clicked.emit(collider,position_collide)
 		var anchor_transform := Transform3D()
 		anchor_transform.origin = right_controller_ray_cast.get_collision_point()
+		print("origin position of collision is",anchor_transform.origin)
 
 		var collision_normal: Vector3 = right_controller_ray_cast.get_collision_normal()
 		if collision_normal.is_equal_approx(Vector3.UP):
@@ -271,7 +279,7 @@ func _on_right_controller_button_pressed(name: String) -> void:
 			anchor_transform.basis = anchor_transform.basis.rotated(Vector3(1.0, 0.0, 0.0), -PI / 2.0)
 		else:
 			anchor_transform.basis = Basis.looking_at(right_controller_ray_cast.get_collision_normal())
-
+		print("creating anchor")
 		spatial_anchor_manager.create_anchor(anchor_transform)
 		update(collider.name)
 

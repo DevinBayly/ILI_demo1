@@ -2,9 +2,9 @@ extends Node
 signal received_user_id
 # By default, these expressions are interchangeable.
 var PORT = 8081
-#var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
+var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
 #var IP_ADDRESS="localhost"
-var IP_ADDRESS = "192.168.0.151"
+#var IP_ADDRESS = "192.168.0.151"
 var MAX_CLIENTS = 2
 var peer
 func _ready() -> void:

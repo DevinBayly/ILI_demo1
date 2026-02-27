@@ -100,5 +100,6 @@ transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.7962
 [node name="networking" parent="." unique_id=261585203 instance=ExtResource("7_272bh")]
 
 [connection signal="collider_clicked" from="Main" to="." method="_on_main_collider_clicked"]
+[connection signal="meta_retrieved_user_id" from="Main" to="." method="_on_main_meta_retrieved_user_id"]
 [connection signal="button_pressed" from="Main/LeftController" to="Main" method="_on_left_controller_button_pressed"]
 [connection signal="button_pressed" from="Main/RightController" to="Main" method="_on_right_controller_button_pressed"]
