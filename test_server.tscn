@@ -2,6 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://cg11kqsbp2v0n" path="res://networking.tscn" id="1_5gbfo"]
 
-[node name="test_server" type="Node3D" unique_id=2040555420]
+[node name="scene_root" type="Node3D" unique_id=2040555420]
 
 [node name="networking" parent="." unique_id=261585203 instance=ExtResource("1_5gbfo")]

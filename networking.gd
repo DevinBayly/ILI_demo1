@@ -7,7 +7,8 @@ var IP_ADDRESS="localhost"
 var MAX_CLIENTS = 2
 var peer
 func _ready() -> void:
-	var arg = OS.get_cmdline_args()[0] # try to see if we started up with the word "server"
+	var arg = OS.get_cmdline_user_args()[0] # try to see if we started up with the word "server"
+	print(OS.get_cmdline_user_args())
 	if arg == "server":
 		print("I am a server")
 		# Create server.
@@ -30,6 +31,10 @@ func con_failed():
 	print("failed to connect to server")
 func client_connected_to_server():
 	print("client made contact with server")
+	# start a timeout that will then make an rpc call
+	await get_tree().create_timer(2).timeout
+	send_user_id.rpc("itsame")
+	
 func server_handle_peer_connect(id):
 	print("server was contacted by peer id",id)
 	
@@ -39,9 +44,11 @@ func send_user_id(other_user_id):
 	var sender_id = multiplayer.get_remote_sender_id()
 	# ensure it's not our own id, and that we aren't server, well I suppose since we called remote it wont be
 	if multiplayer.is_server():
+		print("server responding",other_user_id)
 		pass
 	else:
 		# store this as other player's id
+		print("client responding",other_user_id)
 		received_user_id.emit(other_user_id)
 
 @rpc("any_peer","call_remote","reliable",0)
