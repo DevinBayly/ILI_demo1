@@ -9,6 +9,7 @@ var IP_ADDRESS ="149.165.150.98"
 #var IP_ADDRESS = "192.168.0.151"
 var MAX_CLIENTS = 2
 var peer
+var num_peers = 0
 func _ready() -> void:
 	if OS.has_feature("linux"):
 		var arg = OS.get_cmdline_user_args()[0] # try to see if we started up with the word "server"
@@ -29,6 +30,11 @@ func _ready() -> void:
 	multiplayer.connected_to_server.connect(client_connected_to_server)
 	multiplayer.connection_failed.connect(con_failed)
 	multiplayer.server_disconnected.connect(server_lost)
+	multiplayer.peer_connected.connect(client_handle_peer_connect)
+	
+func client_handle_peer_connect(id):
+	num_peers+=1
+	
 func server_lost():
 	print("server lost")
 func con_failed():

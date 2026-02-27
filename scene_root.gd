@@ -14,14 +14,17 @@ func _on_main_meta_retrieved_user_id(oculus_id) -> void:
 	pass # Replace with function body.
 
 
-func _on_networking_received_user_id() -> void:
+func _on_networking_received_user_id(o_int_id) -> void:
 	# set this as a variable on the xr origin
+	print("received transmitted user id",o_int_id)
+	$Main.other_user_int_id = o_int_id
 	pass # Replace with function body.
 
 
 func _on_networking_received_anchor_uuid(uuid) -> void:
 	# function that make this anchor load on the alternate user
-	
+	print("received transmitted uuid, loading anchor",uuid)
+	$Main.load_from_shared_uuid(uuid)
 	pass # Replace with function body.
 
 

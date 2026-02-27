@@ -12,8 +12,9 @@ var passthrough_enabled: bool = false
 # probably don't need this part actually
 #@onready var depth_testing_mesh: MeshInstance3D = $XROrigin3D/RightHand/DepthTestingMesh
 @onready var world_environment = $WorldEnvironment
-
-var other_user:int
+var ourselves:MetaPlatformSDK_User
+var our_int_id: int
+var other_user_int_id:int
 var shared_anchor_uuid:String
 
 
@@ -190,7 +191,7 @@ func saved_cloud_signal_listener(res,loc):
 		print("yes it was saved to", loc, "good job")
 		# then 	# share with other user
 		var ent:OpenXRFbSpatialEntity = entities.pop_back()
-		var typed_user:OpenXRFbSpatialEntityUser = OpenXRFbSpatialEntityUser.create_user(other_user)
+		var typed_user:OpenXRFbSpatialEntityUser = OpenXRFbSpatialEntityUser.create_user(other_user_int_id)
 		ent.share_with_users([typed_user])
 		ent.openxr_fb_spatial_entity_shared.connect(shared_with_users_signal_listener)
 	else:
@@ -232,6 +233,7 @@ func update_user_info():
 		return
 
 	var user: MetaPlatformSDK_User = result.get_user()
+	ourselves = user
 	#oculus_id_label.text += user.oculus_id
 	meta_retrieved_user_id.emit(user.oculus_id)
 	if user.image_url != "":
@@ -315,6 +317,10 @@ func _on_right_controller_button_pressed(name: String) -> void:
 		print("creating anchor")
 		spatial_anchor_manager.create_anchor(anchor_transform)
 		update(collider.name)
+	if name == "ax_button":
+		# we will try to resend our identification now
+		meta_retrieved_user_id.emit(our_int_id)
+		
 
 
 func _image_request_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, image_request: HTTPRequest):
