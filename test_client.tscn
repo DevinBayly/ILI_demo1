@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://d1eexa25v5k25"]
+
+[ext_resource type="PackedScene" uid="uid://cg11kqsbp2v0n" path="res://networking.tscn" id="1_ls03f"]
+
+[node name="test_client" type="Node3D" unique_id=2123506499]
+
+[node name="networking" parent="." unique_id=261585203 instance=ExtResource("1_ls03f")]
