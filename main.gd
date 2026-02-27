@@ -4,10 +4,10 @@ signal meta_retrieved_user_id
 
 var passthrough_enabled: bool = false
 
-@onready var spatial_anchor_manager: OpenXRFbSpatialAnchorManager = $XROrigin3D/OpenXRFbSpatialAnchorManager
+@onready var spatial_anchor_manager: OpenXRFbSpatialAnchorManager = $OpenXRFbSpatialAnchorManager
 
 # Don't statically type this as `OpenXRMetaEnvironmentDepth` because it doesn't exist on Godot 4.4.
-@onready var environment_depth_node = $XROrigin3D/XRCamera3D/OpenXRMetaEnvironmentDepth
+@onready var environment_depth_node = $XRCamera3D/OpenXRMetaEnvironmentDepth
 # probably don't need this part actually
 #@onready var depth_testing_mesh: MeshInstance3D = $XROrigin3D/RightHand/DepthTestingMesh
 @onready var world_environment = $WorldEnvironment
@@ -199,7 +199,7 @@ func update_user_info():
 		return
 
 	var user: MetaPlatformSDK_User = result.get_user()
-	oculus_id_label.text += user.oculus_id
+	#oculus_id_label.text += user.oculus_id
 	meta_retrieved_user_id.emit(user.oculus_id)
 	if user.image_url != "":
 		var image_request = HTTPRequest.new()
