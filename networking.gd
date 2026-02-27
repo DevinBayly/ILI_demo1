@@ -1,5 +1,6 @@
 extends Node
 signal received_user_id
+signal received_anchor_uuid
 # By default, these expressions are interchangeable.
 var PORT = 8081
 #var IP_ADDRESS = "godotcommunicator.TRA220030.projects.jetstream-cloud.org"
@@ -62,7 +63,7 @@ func send_anchor_uuid(shared_other_uuid):
 		pass
 	else:
 		# store this as other player's id
-		received_user_id.emit(shared_other_uuid)
+		received_anchor_uuid.emit(shared_other_uuid)
 
 
 # then we can have signals on this that say, received uuid anchor or user id is... 

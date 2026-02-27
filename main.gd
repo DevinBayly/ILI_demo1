@@ -1,6 +1,7 @@
 extends XROrigin3D
 
 signal meta_retrieved_user_id
+signal ready_to_transmit_uuid
 
 var passthrough_enabled: bool = false
 
@@ -11,6 +12,10 @@ var passthrough_enabled: bool = false
 # probably don't need this part actually
 #@onready var depth_testing_mesh: MeshInstance3D = $XROrigin3D/RightHand/DepthTestingMesh
 @onready var world_environment = $WorldEnvironment
+
+var other_user:int
+var shared_anchor_uuid:String
+
 
 signal collider_clicked
 
@@ -170,9 +175,37 @@ var entities =[]
 func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity, is_new: bool) -> void:
 	entities.push(_spatial_entity)
 	print("entity is tracked")
+	# set component type to shared
+	# set it to save in cloud
+	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE,true)
+	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
+	_spatial_entity.save_to_storage(OpenXRFbSpatialEntity.STORAGE_CLOUD)
+	_spatial_entity.openxr_fb_spatial_entity_saved.connect(saved_cloud_signal_listener)
+	entities.push_back(_spatial_entity)
 	if is_new:
 		save_spatial_anchors_to_file()
 
+func saved_cloud_signal_listener(res,loc):
+	if res:
+		print("yes it was saved to", loc, "good job")
+		# then 	# share with other user
+		var ent:OpenXRFbSpatialEntity = entities.pop_back()
+		var typed_user:OpenXRFbSpatialEntityUser = OpenXRFbSpatialEntityUser.create_user(other_user)
+		ent.share_with_users([typed_user])
+		ent.openxr_fb_spatial_entity_shared.connect(shared_with_users_signal_listener)
+	else:
+		print("nope failed to save to ",loc)
+
+func shared_with_users_signal_listener(res):
+	if res:
+		print("yup the anchor was shared",res)
+		#get out uuid and then pass it along to the networking
+		
+# last but not least this is where we actually load up an anchor from a uuid that has been shared with us
+func load_from_shared_uuid(uuid):
+	print("completing the round trip, storing the results on screen")
+	shared_anchor_uuid = uuid
+	spatial_anchor_manager.load_anchor(shared_anchor_uuid)
 
 func _on_spatial_anchor_untracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity) -> void:
 	save_spatial_anchors_to_file()
