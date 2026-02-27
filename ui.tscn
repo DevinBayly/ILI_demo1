@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://718m862xeghh"]
+
+[ext_resource type="Script" uid="uid://gkulp1aof63o" path="res://ui.gd" id="1_fyqef"]
+
+[node name="UI" type="Control" unique_id=109565994]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fyqef")
+
+[node name="Label" type="Label" parent="." unique_id=828792998]
+layout_mode = 0
+offset_right = 182.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Testing out what a clue would look like on the UI"
+
+[node name="ColorRect" type="ColorRect" parent="Label" unique_id=163962141]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.46666667)

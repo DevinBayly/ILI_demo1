@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://b1g5c1r572k07"]
+
+[ext_resource type="Script" uid="uid://2kxskjngj2cf" path="res://anchor_node.gd" id="1_3yy5h"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mgnqb"]
+albedo_color = Color(0.9432127, 0.17597243, 0.6072114, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_3yy5h"]
+material = SubResource("StandardMaterial3D_mgnqb")
+
+[node name="Node3D" type="Node3D" unique_id=230249233]
+script = ExtResource("1_3yy5h")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1264509917]
+transform = Transform3D(0.23615454, 0, 0, 0, 2.0177565, 0, 0, 0, 0.23615454, 0, 0, 0)
+mesh = SubResource("CylinderMesh_3yy5h")

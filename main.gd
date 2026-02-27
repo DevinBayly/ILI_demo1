@@ -1,5 +1,20 @@
 extends XROrigin3D
 
+
+var passthrough_enabled: bool = false
+
+@onready var spatial_anchor_manager: OpenXRFbSpatialAnchorManager = $XROrigin3D/OpenXRFbSpatialAnchorManager
+
+# Don't statically type this as `OpenXRMetaEnvironmentDepth` because it doesn't exist on Godot 4.4.
+@onready var environment_depth_node = $XROrigin3D/XRCamera3D/OpenXRMetaEnvironmentDepth
+# probably don't need this part actually
+#@onready var depth_testing_mesh: MeshInstance3D = $XROrigin3D/RightHand/DepthTestingMesh
+@onready var world_environment = $WorldEnvironment
+
+signal collider_clicked
+
+const SPATIAL_ANCHORS_FILE = "res://openxr_fb_spatial_anchors.json"
+
 const MAX_DISPLAY_FRIENDS := 5
 const SIMPLE_ACHIEVEMENT_NAME := "simple-achievement-example"
 const COUNT_ACHIEVEMENT_NAME := "count-achievement-example"
@@ -51,16 +66,18 @@ var bitfield_achievement_unlocked := false
 @onready var consumable_addon_label: Label3D = %ConsumableAddonLabel
 @onready var durable_addon_label: Label3D = %DurableAddonLabel
 @onready var subscription_label: Label3D = %SubscriptionLabel
-
+var xr_interface
 func _ready() -> void:
-	var xr_interface = XRServer.find_interface("OpenXR")
+	xr_interface = XRServer.find_interface("OpenXR")
 	if xr_interface and xr_interface.is_initialized():
 		var vp: Viewport = get_viewport()
 		vp.use_xr = true
 
-		vp.transparent_bg = true
-		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-		xr_interface.environment_blend_mode = XRInterface.XR_ENV_BLEND_MODE_ALPHA_BLEND
+		#vp.transparent_bg = true
+		# not sure if this is necessary
+		#DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		#xr_interface.environment_blend_mode = XRInterface.XR_ENV_BLEND_MODE_ALPHA_BLEND
+		xr_interface.session_begun.connect(_on_openxr_session_begun)
 
 	if ResourceLoader.exists("res://local.gd"):
 		var local = load('res://local.gd')
@@ -77,6 +94,36 @@ func _ready() -> void:
 	OS.request_permissions()
 
 	initialize_platform_sdk()
+
+func _on_openxr_session_begun():
+	load_spatial_anchors_from_file()
+	enable_passthrough(true)
+
+	var environment_depth = Engine.get_singleton("OpenXRMetaEnvironmentDepthExtensionWrapper")
+	if environment_depth:
+		print("Supports environment depth: ", environment_depth.is_environment_depth_supported())
+		print("Supports hand removal: ", environment_depth.is_hand_removal_supported())
+		if environment_depth.is_environment_depth_supported():
+			environment_depth.start_environment_depth()
+			print("Environment depth started: ", environment_depth.is_environment_depth_started())
+
+func enable_passthrough(enable: bool) -> void:
+	if passthrough_enabled == enable:
+		return
+
+	var supported_blend_modes = xr_interface.get_supported_environment_blend_modes()
+	if XRInterface.XR_ENV_BLEND_MODE_ALPHA_BLEND in supported_blend_modes and XRInterface.XR_ENV_BLEND_MODE_OPAQUE in supported_blend_modes:
+		if enable:
+			# Switch to passthrough.
+			xr_interface.environment_blend_mode = XRInterface.XR_ENV_BLEND_MODE_ALPHA_BLEND
+			get_viewport().transparent_bg = true
+			world_environment.environment.background_color = Color(0.0, 0.0, 0.0, 0.0)
+		else:
+			# Switch back to VR.
+			xr_interface.environment_blend_mode = XRInterface.XR_ENV_BLEND_MODE_OPAQUE
+			get_viewport().transparent_bg = false
+			world_environment.environment.background_color = Color(0.3, 0.3, 0.3, 1.0)
+		passthrough_enabled = enable
 
 
 func initialize_platform_sdk():
@@ -101,9 +148,34 @@ func initialize_platform_sdk():
 
 	update_user_info()
 	update_friend_info()
-	update_iap_info()
-	update_achievement_info()
+	
 
+func on_notification_received(message: MetaPlatformSDK_Message):
+	if message.is_error():
+		push_error("Error message received. Code: %s | Message: %s" % [message.error.code, message.error.message])
+		return
+
+	# This demo only expects messages for asset file download updates.
+	if message.get_type_as_string() != "MESSAGE_NOTIFICATION_ASSET_FILE_DOWNLOAD_UPDATE":
+		print("Unexpected message received of type %s" % message.get_type_as_string())
+		return
+
+	
+func load_spatial_anchors_from_file():
+	pass
+
+
+
+func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity, is_new: bool) -> void:
+	if is_new:
+		save_spatial_anchors_to_file()
+
+
+func _on_spatial_anchor_untracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity) -> void:
+	save_spatial_anchors_to_file()
+	
+func save_spatial_anchors_to_file():
+	pass
 
 func update_user_info():
 	var result: MetaPlatformSDK_Message
@@ -155,71 +227,7 @@ func update_friend_info():
 		friend_count += 1
 
 
-func update_iap_info():
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.iap_get_viewer_purchases_async().completed
-	if result.is_error():
-		consumable_addon_label.text = "Error getting user purchases!"
-		purchase_processing = false
-		return
 
-	var consumable_available := false
-	var purchase_array := result.get_purchase_array()
-	for purchase: MetaPlatformSDK_Purchase in purchase_array:
-		if purchase.sku == DURABLE_ADDON_SKU:
-			durable_addon_label.text = "Durable Addon DLC\nPurchased"
-			if not durable_displayed:
-				get_durable_info()
-		elif purchase.sku == CONSUMABLE_ADDON_SKU:
-			consumable_available = true
-		elif purchase.sku == SUBSCRIPTION_SKU:
-			var datetime_str := Time.get_datetime_string_from_unix_time(purchase.expiration_time, true)
-			subscription_label.text = "Subscription Active\nUntil %s" % datetime_str
-
-	if consumable_available:
-		consumable_addon_label.text = "Consumable Available"
-	else:
-		consumable_addon_label.text = "No Consumable Available"
-
-	purchase_processing = false
-
-
-func update_achievement_info():
-	var result: MetaPlatformSDK_Message
-	result = await MetaPlatformSDK.achievements_get_all_progress_async().completed
-	if result.is_error():
-		simple_achievement_label.text = "Error getting\nachievement progress!"
-		count_achievement_label.text = "Error getting\nachievement progress!"
-		bitfield_achievement_label.text = "Error getting\nachievement progress!"
-		simple_achievement_processing = false
-		count_achievement_processing = false
-		bitfield_achievement_processing = false
-		push_error("Couldn't get achievement progress: ", result.error)
-		return
-
-	var achievement_progress_array := result.get_achievement_progress_array()
-	for achievement_progress: MetaPlatformSDK_AchievementProgress in achievement_progress_array:
-		match achievement_progress.name:
-			SIMPLE_ACHIEVEMENT_NAME:
-				if achievement_progress.is_unlocked:
-					simple_achievement_label.text = "Simple Achievement\nUnlocked!"
-					simple_achievement_unlocked = true
-			COUNT_ACHIEVEMENT_NAME:
-				if achievement_progress.is_unlocked:
-					count_achievement_label.text = "Count Achievement\nUnlocked!"
-					count_achievement_unlocked = true
-				else:
-					count_achievement_label.text = "Count is %s\nout of 3" % achievement_progress.count
-			BITFIELD_ACHIEVEMENT_NAME:
-				if achievement_progress.is_unlocked:
-					bitfield_achievement_label.text = "Bitfield Achievement\nUnlocked!"
-					bitfield_achievement_unlocked = true
-				else:
-					var active_bits = achievement_progress.bitfield.split().count("1")
-					bitfield_achievement_label.text = "%s of 5 bits active\nActivate 3 bits to unlock" % active_bits
-
-	simple_achievement_processing = false
-	count_achievement_processing = false
-	bitfield_achievement_processing = false
 
 
 func hide_non_initialization_info():
@@ -232,249 +240,11 @@ func hide_non_initialization_info():
 func update(collider_name):
 	if not platform_sdk_initialized:
 		return
-
-	match collider_name:
-		"SimpleAchievementButton":
-			unlock_simple_achievement()
-		"CountAchievementButton":
-			increment_count_achievement()
-		"BitfieldAchievementButton1":
-			add_field_bitfield_achievement(0)
-		"BitfieldAchievementButton2":
-			add_field_bitfield_achievement(1)
-		"BitfieldAchievementButton3":
-			add_field_bitfield_achievement(2)
-		"BitfieldAchievementButton4":
-			add_field_bitfield_achievement(3)
-		"BitfieldAchievementButton5":
-			add_field_bitfield_achievement(4)
-		"PurchaseConsumableButton":
-			purchase_consumable()
-		"ConsumeConsumableButton":
-			consume_consumable()
-		"PurchaseDurableButton":
-			purchase_durable()
-		"PurchaseSubscriptionButton":
-			purchase_subscription()
+	print("trigger clicked on ",collider_name)
+	#match collider_name:
+		
 
 
-func purchase_consumable():
-	if purchase_processing:
-		return
-
-	consumable_addon_label.text = "Processing..."
-	purchase_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.iap_launch_checkout_flow_async(CONSUMABLE_ADDON_SKU).completed
-	if result.is_error():
-		consumable_addon_label.text = "Error launching\nproduct checkout flow!"
-		purchase_processing = false;
-		return
-
-	update_iap_info()
-
-
-func consume_consumable():
-	consumable_addon_label.text = "Consuming..."
-	purchase_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.iap_consume_purchase_async(CONSUMABLE_ADDON_SKU).completed
-	if result.is_error():
-		consumable_addon_label.text = "Error consuming\nconsumable addon!"
-		purchase_processing = true
-		return
-
-	update_iap_info()
-
-
-func purchase_durable():
-	if purchase_processing:
-		return
-
-	durable_addon_label.text = "Processing..."
-	purchase_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.iap_launch_checkout_flow_async(DURABLE_ADDON_SKU).completed
-	if result.is_error():
-		durable_addon_label.text = "Error launching\nproduct checkout flow!"
-		purchase_processing = false;
-		return
-
-	update_iap_info()
-
-
-func get_durable_info():
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.asset_file_get_list_async().completed
-	if result.is_error():
-		durable_addon_label.text = "Error Getting Asset\nFile List"
-		return
-
-	var durable_asset_details: MetaPlatformSDK_AssetDetails
-	var asset_details_array := result.get_asset_details_array()
-	for asset_details: MetaPlatformSDK_AssetDetails in asset_details_array:
-		if asset_details.asset_id == DURABLE_ADDON_ID:
-			durable_asset_details = asset_details
-			break
-
-	if durable_asset_details == null:
-		durable_addon_label.text = "No Durable Adddon\nAsset Details Found"
-		return
-
-	durable_filepath = durable_asset_details.filepath
-
-	if durable_asset_details.download_status != "installed":
-		result = await MetaPlatformSDK.asset_file_download_by_id_async(durable_asset_details.asset_id).completed
-		if result.is_error():
-			durable_addon_label.text = "Error Downloading\nAsset By ID"
-			return
-
-		durable_addon_label.text = "Downloading DLC..."
-		return
-
-	display_durable()
-
-
-func display_durable():
-	if not FileAccess.file_exists(durable_filepath):
-		durable_addon_label.text = "Downloaded Durable Addon\nAsset File Not Found"
-		return
-
-	if not ProjectSettings.load_resource_pack(durable_filepath):
-		durable_addon_label.text = "Asset Resource Pack\nFailed To Load"
-		return
-
-	var durable_scene := load(DURABLE_ADDON_SCENE_PATH)
-	if not durable_scene:
-		durable_addon_label.text = "Durable Addon Scene\nFailed To Load"
-		return
-
-	var durable_scene_instance = durable_scene.instantiate()
-	dlc_position.add_child(durable_scene_instance)
-	durable_displayed = true
-	durable_addon_label.text = "Durable Addon Scene\nDisplayed To Your Right"
-
-
-func on_notification_received(message: MetaPlatformSDK_Message):
-	if message.is_error():
-		push_error("Error message received. Code: %s | Message: %s" % [message.error.code, message.error.message])
-		return
-
-	# This demo only expects messages for asset file download updates.
-	if message.get_type_as_string() != "MESSAGE_NOTIFICATION_ASSET_FILE_DOWNLOAD_UPDATE":
-		print("Unexpected message received of type %s" % message.get_type_as_string())
-		return
-
-	var download_update := message.get_asset_file_download_update()
-	if download_update.completed:
-		display_durable()
-
-
-func purchase_subscription():
-	if purchase_processing:
-		return
-
-	subscription_label.text = "Processing..."
-	purchase_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.iap_launch_checkout_flow_async(SUBSCRIPTION_SKU).completed
-	if result.is_error():
-		subscription_label.text = "Error launching\nproduct checkout flow!"
-		purchase_processing = false;
-		return
-
-	update_iap_info()
-
-
-func unlock_simple_achievement():
-	if simple_achievement_processing or simple_achievement_unlocked:
-		return
-
-	simple_achievement_label.text = "Processing..."
-	simple_achievement_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.achievements_unlock_async(SIMPLE_ACHIEVEMENT_NAME).completed
-	if result.is_error():
-		simple_achievement_label.text = "Error unlocking\nSimple Achievement"
-	else:
-		var achievement_update := result.get_achievement_update()
-		if achievement_update.just_unlocked:
-			simple_achievement_label.text = "Simple Achievement\njust unlocked!"
-			simple_achievement_unlocked = true
-
-	simple_achievement_processing = false
-
-
-func increment_count_achievement():
-	if count_achievement_processing or count_achievement_unlocked:
-		return
-
-	count_achievement_label.text = "Processing..."
-	count_achievement_processing = true
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.achievements_add_count_async(COUNT_ACHIEVEMENT_NAME, 1).completed
-	if result.is_error():
-		count_achievement_label.text = "Error adding to\nCount Achievement"
-	else:
-		var achievement_update := result.get_achievement_update()
-		if achievement_update.just_unlocked:
-			count_achievement_label.text = "Count Achievement\njust unlocked!"
-			count_achievement_unlocked = true
-		else:
-			update_count_achievement_progress()
-
-	count_achievement_processing = false
-
-
-func update_count_achievement_progress():
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.achievements_get_progress_by_name_async([COUNT_ACHIEVEMENT_NAME]).completed
-	if result.is_error():
-		count_achievement_label.text = "Error checking\nCount Achievement progress"
-	else:
-		var achievement_progress_array := result.get_achievement_progress_array()
-		for achievement_progress: MetaPlatformSDK_AchievementProgress in achievement_progress_array:
-			if achievement_progress.name != COUNT_ACHIEVEMENT_NAME:
-				continue
-			count_achievement_label.text = "Count is %s\nout of 3" % achievement_progress.count
-			return
-
-
-func add_field_bitfield_achievement(bitfield_position: int):
-	if bitfield_achievement_processing or bitfield_achievement_unlocked:
-		return
-
-	bitfield_achievement_label.text = "Processing..."
-	bitfield_achievement_processing = true
-
-	var bitfield := ""
-	for i in BITFIELD_ACHIEVEMENT_LENGTH:
-		bitfield += "1" if i == bitfield_position else "0"
-
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.achievements_add_fields_async(BITFIELD_ACHIEVEMENT_NAME, bitfield).completed
-	if result.is_error():
-		bitfield_achievement_label.text = "Error adding field to\nBitfield Achievement"
-	else:
-		var achievement_update := result.get_achievement_update()
-		if achievement_update.just_unlocked:
-			bitfield_achievement_label.text = "Bitfield Achievement\njust unlocked!"
-			bitfield_achievement_unlocked = true
-		else:
-			update_bitfield_achievement_progress()
-
-	bitfield_achievement_processing = false
-
-
-func update_bitfield_achievement_progress():
-	var result: MetaPlatformSDK_Message = await MetaPlatformSDK.achievements_get_progress_by_name_async([BITFIELD_ACHIEVEMENT_NAME]).completed
-	if result.is_error():
-		bitfield_achievement_label.text = "Error checking\nBitfield Achievement progress"
-	else:
-		var achievement_progress_array := result.get_achievement_progress_array()
-		for achievement_progress: MetaPlatformSDK_AchievementProgress in achievement_progress_array:
-			if achievement_progress.name != BITFIELD_ACHIEVEMENT_NAME:
-				continue
-			var active_bits = achievement_progress.bitfield.split().count("1")
-			bitfield_achievement_label.text = "%s of 5 bits active\nActivate 3 bits to unlock" % active_bits
-			return
 
 
 func _on_left_controller_button_pressed(name: String) -> void:
@@ -486,6 +256,20 @@ func _on_left_controller_button_pressed(name: String) -> void:
 func _on_right_controller_button_pressed(name: String) -> void:
 	if name == "trigger_click" and right_controller_ray_cast.is_colliding():
 		var collider = right_controller_ray_cast.get_collider()
+		var position_collide = right_controller_ray_cast.target_position
+		collider_clicked.emit(collider,position_collide)
+		var anchor_transform := Transform3D()
+		anchor_transform.origin = right_controller_ray_cast.get_collision_point()
+
+		var collision_normal: Vector3 = right_controller_ray_cast.get_collision_normal()
+		if collision_normal.is_equal_approx(Vector3.UP):
+			anchor_transform.basis = anchor_transform.basis.rotated(Vector3(1.0, 0.0, 0.0), PI / 2.0)
+		elif collision_normal.is_equal_approx(Vector3.DOWN):
+			anchor_transform.basis = anchor_transform.basis.rotated(Vector3(1.0, 0.0, 0.0), -PI / 2.0)
+		else:
+			anchor_transform.basis = Basis.looking_at(right_controller_ray_cast.get_collision_normal())
+
+		spatial_anchor_manager.create_anchor(anchor_transform)
 		update(collider.name)
 
 
@@ -500,3 +284,14 @@ func _image_request_completed(_result: int, response_code: int, headers: PackedS
 	var image_texture = ImageTexture.create_from_image(image)
 	user_image.texture = image_texture
 	image_request.queue_free()
+# processing per frame not necessary just send position when trigger pressed
+#var timeout = 1
+#func _physics_process(delta: float) -> void:
+	#timeout -=delta
+	#if timeout <0:
+		#
+		#timeout=1
+		## check if the right controller has hit anything
+		#if left_controller_ray_cast.is_colliding():
+			#var object = left_controller_ray_cast.get_collider()
+			#var position_collision = left_controller_ray_cast.target_position

@@ -1,8 +1,21 @@
 [gd_scene format=3 uid="uid://c0ol8en13wpk3"]
 
+[ext_resource type="Script" uid="uid://unlngkff421c" path="res://scene_root.gd" id="1_7mycd"]
 [ext_resource type="Script" uid="uid://bp3gnieyxmcir" path="res://main.gd" id="1_t3hrc"]
 [ext_resource type="Script" uid="uid://qb2g8p5s3m8x" path="res://raycast.gd" id="2_5nsls"]
-[ext_resource type="PackedScene" path="res://chest_and_platform.tscn" id="3_h2yge"]
+[ext_resource type="PackedScene" uid="uid://64ihr8ynap0" path="res://chest_and_platform.tscn" id="3_h2yge"]
+[ext_resource type="PackedScene" uid="uid://718m862xeghh" path="res://ui.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://b1g5c1r572k07" path="res://anchor_node.tscn" id="4_lquwl"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_75bh1"]
+top_radius = 0.005
+bottom_radius = 0.005
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vpekr"]
+shading_mode = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mguh3"]
+shading_mode = 0
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_h1cjv"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -15,70 +28,81 @@ sky_material = SubResource("ProceduralSkyMaterial_h1cjv")
 sky = SubResource("Sky_a1pyg")
 tonemap_mode = 2
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_75bh1"]
-top_radius = 0.005
-bottom_radius = 0.005
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vpekr"]
-shading_mode = 0
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mguh3"]
-shading_mode = 0
-
 [sub_resource type="PlaneMesh" id="PlaneMesh_1bvp3"]
 
-[node name="Main" type="XROrigin3D" unique_id=1310468845]
+[node name="scene_root" type="Node3D" unique_id=1613035025]
+script = ExtResource("1_7mycd")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=1777017737]
+transparent_bg = true
+render_target_update_mode = 4
+
+[node name="UI" parent="SubViewport" unique_id=109565994 instance=ExtResource("4_1bvp3")]
+
+[node name="Main" type="XROrigin3D" parent="." unique_id=1310468845]
 script = ExtResource("1_t3hrc")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=700232707]
-environment = SubResource("Environment_jc7i8")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=8837964]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Main" unique_id=8837964]
 transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 0, 0)
 
-[node name="DirectionalLight3D2" type="DirectionalLight3D" parent="." unique_id=1208876438]
+[node name="DirectionalLight3D2" type="DirectionalLight3D" parent="Main" unique_id=1208876438]
 transform = Transform3D(-0.866025, -0.433013, 0.25, -0.12941, -0.288849, -0.948588, 0.482963, -0.853854, 0.194114, 0, 0, 0)
 
-[node name="XRCamera3D" type="XRCamera3D" parent="." unique_id=1656663907]
+[node name="XRCamera3D" type="XRCamera3D" parent="Main" unique_id=1656663907]
 
-[node name="LeftController" type="XRController3D" parent="." unique_id=1662445133]
+[node name="OpenXRMetaEnvironmentDepth" type="OpenXRMetaEnvironmentDepth" parent="Main/XRCamera3D" unique_id=963888921]
+
+[node name="LeftController" type="XRController3D" parent="Main" unique_id=1662445133]
 tracker = &"left_hand"
 pose = &"grip"
 
-[node name="LeftControllerRayCast" type="RayCast3D" parent="LeftController" unique_id=1947877623]
+[node name="LeftControllerRayCast" type="RayCast3D" parent="Main/LeftController" unique_id=1947877623]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.059, -0.052)
 target_position = Vector3(0, -10, 0)
 script = ExtResource("2_5nsls")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="LeftController/LeftControllerRayCast" unique_id=1323150050]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Main/LeftController/LeftControllerRayCast" unique_id=1323150050]
 mesh = SubResource("CylinderMesh_75bh1")
 surface_material_override/0 = SubResource("StandardMaterial3D_vpekr")
 
-[node name="RightController" type="XRController3D" parent="." unique_id=2134168061]
+[node name="RightController" type="XRController3D" parent="Main" unique_id=2134168061]
 tracker = &"right_hand"
 pose = &"grip"
 
-[node name="RightControllerRayCast" type="RayCast3D" parent="RightController" unique_id=1318489928]
+[node name="RightControllerRayCast" type="RayCast3D" parent="Main/RightController" unique_id=1318489928]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.059, -0.052)
 target_position = Vector3(0, -10, 0)
 script = ExtResource("2_5nsls")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="RightController/RightControllerRayCast" unique_id=757830247]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Main/RightController/RightControllerRayCast" unique_id=757830247]
 mesh = SubResource("CylinderMesh_75bh1")
 surface_material_override/0 = SubResource("StandardMaterial3D_mguh3")
+
+[node name="OpenXRCompositionLayerQuad" type="OpenXRCompositionLayerQuad" parent="Main" unique_id=1294950465 node_paths=PackedStringArray("layer_viewport")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -1.3)
+layer_viewport = NodePath("../../SubViewport")
+alpha_blend = true
+
+[node name="OpenXRFbSpatialAnchorManager" type="OpenXRFbSpatialAnchorManager" parent="Main" unique_id=13019911]
+scene = ExtResource("4_lquwl")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Main" unique_id=700232707]
+environment = SubResource("Environment_jc7i8")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1505958783]
 transform = Transform3D(6.447613, 0, 0, 0, 6.447613, 0, 0, 0, 6.447613, 0, 0, 0)
 mesh = SubResource("PlaneMesh_1bvp3")
+skeleton = NodePath("../Main")
 
 [node name="Node3D" parent="." unique_id=346451625 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.027260542, 0, -3.3221087)
+transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.79624486, -0.031452656, 4.7683716e-07, -3.0778522)
 
-[node name="Node3D2" parent="." unique_id=74675562 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1366107, 0, -3.5204544)
+[node name="Node3D2" parent="." unique_id=12912953 instance=ExtResource("3_h2yge")]
+transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.79624486, -2.5647445, 4.7683716e-07, -3.0778522)
 
-[node name="Node3D3" parent="." unique_id=10686153 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0880098, 0, -3.4268665)
+[node name="Node3D3" parent="." unique_id=1421380320 instance=ExtResource("3_h2yge")]
+transform = Transform3D(0.79624486, 0, 0.6049745, 0, 1, 0, -0.6049745, 0, 0.79624486, 2.3787699, 4.7683716e-07, -3.0778522)
 
-[connection signal="button_pressed" from="LeftController" to="." method="_on_left_controller_button_pressed"]
-[connection signal="button_pressed" from="RightController" to="." method="_on_right_controller_button_pressed"]
+[connection signal="collider_clicked" from="Main" to="." method="_on_main_collider_clicked"]
+[connection signal="button_pressed" from="Main/LeftController" to="Main" method="_on_left_controller_button_pressed"]
+[connection signal="button_pressed" from="Main/RightController" to="Main" method="_on_right_controller_button_pressed"]
