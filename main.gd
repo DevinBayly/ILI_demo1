@@ -2,7 +2,9 @@ extends XROrigin3D
 
 signal meta_retrieved_user_id
 signal ready_to_transmit_uuid
-var fall_back_ids = {"test_r456sn":1004658102731568,"devinbayly":26608951088711524}
+var fall_back_ids = {"test_mxu9kf":26014973921520855,"devinbayly":26608951088711524}
+# this is the opposite of the above for other person lookups
+var other_ids_map =  {"test_mxu9kf":26608951088711524,"devinbayly":26014973921520855 }
 var passthrough_enabled: bool = false
 
 @onready var spatial_anchor_manager: OpenXRFbSpatialAnchorManager = $OpenXRFbSpatialAnchorManager
@@ -174,26 +176,29 @@ func load_spatial_anchors_from_file():
 
 var entities =[]
 func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity, is_new: bool) -> void:
-	entities.push(_spatial_entity)
+	entities.push_back(_spatial_entity)
 	print("entity is tracked")
 	# set component type to shared
 	# set it to save in cloud
 	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE,true)
 	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
+	print("checking whether the anchor can be stored" , _spatial_entity.is_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE))
 	_spatial_entity.save_to_storage(OpenXRFbSpatialEntity.STORAGE_CLOUD)
 	_spatial_entity.openxr_fb_spatial_entity_saved.connect(saved_cloud_signal_listener)
 	entities.push_back(_spatial_entity)
 	if is_new:
 		save_spatial_anchors_to_file()
-
+var actively_shared_entity:OpenXRFbSpatialEntity
 func saved_cloud_signal_listener(res,loc):
 	if res:
+		
 		print("yes it was saved to", loc, "good job")
 		# then 	# share with other user
-		var ent:OpenXRFbSpatialEntity = entities.pop_back()
+		actively_shared_entity = entities.pop_back()
 		var typed_user:OpenXRFbSpatialEntityUser = OpenXRFbSpatialEntityUser.create_user(other_user_int_id)
-		ent.share_with_users([typed_user])
-		ent.openxr_fb_spatial_entity_shared.connect(shared_with_users_signal_listener)
+		actively_shared_entity.share_with_users([typed_user])
+		print("trying to share with user")
+		actively_shared_entity.openxr_fb_spatial_entity_shared.connect(shared_with_users_signal_listener)
 	else:
 		print("nope failed to save to ",loc)
 
@@ -201,6 +206,7 @@ func shared_with_users_signal_listener(res):
 	if res:
 		print("yup the anchor was shared",res)
 		#get out uuid and then pass it along to the networking
+		
 		
 # last but not least this is where we actually load up an anchor from a uuid that has been shared with us
 func load_from_shared_uuid(uuid):
@@ -238,6 +244,8 @@ func update_user_info():
 	## refer to the fall back map for id
 	#our_int_id = fall_back_ids.get(user.oculus_id)
 	our_int_id = user.id
+	# use the map to get the other user id 
+	other_user_int_id = other_ids_map[user.oculus_id]
 	meta_retrieved_user_id.emit(our_int_id)
 	#if user.image_url != "":
 		#var image_request = HTTPRequest.new()
