@@ -2,7 +2,7 @@ extends XROrigin3D
 
 signal meta_retrieved_user_id
 signal ready_to_transmit_uuid
-
+var fall_back_ids = {"test_r456sn":1004658102731568,"devinbayly":26608951088711524}
 var passthrough_enabled: bool = false
 
 @onready var spatial_anchor_manager: OpenXRFbSpatialAnchorManager = $OpenXRFbSpatialAnchorManager
@@ -226,24 +226,27 @@ func update_user_info():
 		#entitled_label.text += "FALSE"
 
 	result = await MetaPlatformSDK.user_get_logged_in_user_async().completed
-	if result.is_error():
-		print("error failed to get user data")
-		oculus_id_label.text = "Failed to get user data!"
-		push_error("Failed to get user data: ", result.error)
-		return
-
+	#if result.is_error():
+		#print("error failed to get user data")
+		#oculus_id_label.text = "Failed to get user data!"
+		#push_error("Failed to get user data: ", result.error)
+		#return
 	var user: MetaPlatformSDK_User = result.get_user()
+	print("user id before sending was ",user.id )
 	ourselves = user
 	#oculus_id_label.text += user.oculus_id
-	meta_retrieved_user_id.emit(user.oculus_id)
-	if user.image_url != "":
-		var image_request = HTTPRequest.new()
-		add_child(image_request)
-		image_request.request_completed.connect(self._image_request_completed.bind(image_request))
-
-		var error = image_request.request(user.image_url)
-		if error != OK:
-			push_error("There was an error with the image request.")
+	## refer to the fall back map for id
+	#our_int_id = fall_back_ids.get(user.oculus_id)
+	our_int_id = user.id
+	meta_retrieved_user_id.emit(our_int_id)
+	#if user.image_url != "":
+		#var image_request = HTTPRequest.new()
+		#add_child(image_request)
+		#image_request.request_completed.connect(self._image_request_completed.bind(image_request))
+#
+		#var error = image_request.request(user.image_url)
+		#if error != OK:
+			#push_error("There was an error with the image request.")
 	
 
 
@@ -323,17 +326,7 @@ func _on_right_controller_button_pressed(name: String) -> void:
 		
 
 
-func _image_request_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, image_request: HTTPRequest):
-	if response_code != 200 or not headers.has("Content-Type: image/png"):
-		push_error("Image request was not successful.")
-		image_request.queue_free()
-		return
 
-	var image = Image.new()
-	image.load_png_from_buffer(body)
-	var image_texture = ImageTexture.create_from_image(image)
-	user_image.texture = image_texture
-	image_request.queue_free()
 # processing per frame not necessary just send position when trigger pressed
 #var timeout = 1
 #func _physics_process(delta: float) -> void:
