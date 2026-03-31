@@ -175,19 +175,42 @@ func load_spatial_anchors_from_file():
 
 
 var entities =[]
+var entity:OpenXRFbSpatialEntity
 func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenXRFbSpatialEntity, is_new: bool) -> void:
 	entities.push_back(_spatial_entity)
-	print("entity is tracked")
+	entity = _spatial_entity
+	print("entity is tracked, checking enablement")
+	print("\n\n")
+	_spatial_entity.openxr_fb_spatial_entity_set_component_enabled_completed.connect(on_set_component_enabled)
+	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
 	# set component type to shared
 	# set it to save in cloud
-	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE,true)
-	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
-	print("checking whether the anchor can be stored" , _spatial_entity.is_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE))
-	_spatial_entity.save_to_storage(OpenXRFbSpatialEntity.STORAGE_CLOUD)
-	_spatial_entity.openxr_fb_spatial_entity_saved.connect(saved_cloud_signal_listener)
-	entities.push_back(_spatial_entity)
+	
+	
+	#entities.push_back(_spatial_entity)
 	if is_new:
 		save_spatial_anchors_to_file()
+func on_set_component_enabled(p_succeeded: bool, p_component: OpenXRFbSpatialEntity.ComponentType, p_enabled: bool)-> void:
+	print(p_component," succeeded? ",p_succeeded, " enabled ",p_enabled)
+	if p_enabled and p_component == OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE:
+		if not p_succeeded:
+			print("ran into a fail with the storable enabling in callback")
+			return
+		# once we get here we can try to do a share because things will have been enabled
+		print("yes the element got type updated to storable")
+		# now we will try to make it sharable, triggering this call back again but with a different conditional
+		entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE,true)
+	elif p_enabled and p_component == OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE:
+		# disconnect via reference to last element in entities
+		entity.openxr_fb_spatial_entity_set_component_enabled_completed.disconnect(on_set_component_enabled)
+		if not p_succeeded:
+			print("ran into a fail with the sharable enabling in callback")
+			return
+		# once we get here we can try to do a share because things will have been enabled
+		print("yes the element got type updated to sharable")
+		entity.save_to_storage(OpenXRFbSpatialEntity.STORAGE_CLOUD)
+		entity.openxr_fb_spatial_entity_saved.connect(saved_cloud_signal_listener)
+	
 var actively_shared_entity:OpenXRFbSpatialEntity
 func saved_cloud_signal_listener(res,loc):
 	if res:
@@ -206,6 +229,9 @@ func shared_with_users_signal_listener(res):
 	if res:
 		print("yup the anchor was shared",res)
 		#get out uuid and then pass it along to the networking
+		# emit the uuid signal
+		ready_to_transmit_uuid.emit(actively_shared_entity.uuid)
+		
 		
 		
 # last but not least this is where we actually load up an anchor from a uuid that has been shared with us
