@@ -182,8 +182,12 @@ func _on_spatial_anchor_tracked(_anchor_node: XRAnchor3D, _spatial_entity: OpenX
 	print("entity is tracked, checking enablement")
 	print("\n\n")
 	_spatial_entity.openxr_fb_spatial_entity_set_component_enabled_completed.connect(on_set_component_enabled)
-	_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
+	#_spatial_entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE,true)
+	print("checking whether storable is true ", _spatial_entity.is_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_STORABLE))
+	print("checking whether sharable is true ", _spatial_entity.is_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE))
 	# set component type to shared
+	entity.set_component_enabled(OpenXRFbSpatialEntity.COMPONENT_TYPE_SHARABLE,true)
+
 	# set it to save in cloud
 	
 	
